@@ -3,7 +3,10 @@ package it.unipr.informatica.tirocin;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import json.JSON;
 import json.JSONArray;
@@ -11,7 +14,7 @@ import json.JSONIzer;
 import json.ValueNotFoundException;
 
 public class Graph {
-	private List<Node> nodes;
+	public List<Node> nodes;
 	private List<Edge> edges;
 	
 	public Graph(String NodeFile,String EdgeFile) throws ValueNotFoundException{
@@ -93,6 +96,39 @@ public class Graph {
 		
 	}
 	
+	public void printGraphCompare(PrintStream ps, boolean isSubgraph) {
+
+		ps.println("digraph{");
+		rawPrintCompare(ps, isSubgraph);
+		ps.println("}");
+		
+	}
+	
+	public void rawPrintCompare(PrintStream ps, boolean isSubgraph) {
+		int i = 0;
+		for(Node n:nodes) {			
+			String color=isSubgraph?"green":"black";
+			ps.println(n.getID()+" [label=\""+ i++ +"\", pos=\""+n.getX()+","+n.getY()+"!\", color=\""+color+"\"]");
+		}
+		for(Edge e:edges) {
+			String color=isSubgraph?"green":"black";
+			Node from = e.nodes[0];
+			Node to = e.nodes[1];
+			ps.println(from.getID()+" -> "+to.getID()+" [color=\""+color+"\", dir=none]");
+		}
+	
+	}
+	public void printMultipleGraphsCompare(PrintStream ps, List<Graph> subgraphs) {
+		ps.println("digraph{");
+		rawPrintCompare(ps, false);
+		for(Graph g:subgraphs) {
+			g.rawPrintCompare(ps,true);
+		}
+		ps.println("}");
+		
+	}
+
+	
 	
 	public List<Graph> subgraphs(int segment, int size) {
 
@@ -106,6 +142,7 @@ public class Graph {
 			Range range = new Range(n.getX()-segment,n.getX()+segment,n.getY()-segment,n.getY()+segment);
 			
 			for(Node n2:nodes) {
+				if(!n2.type.equals("bifurcation") && !n2.type.equals("ending")) continue;
 				if(range.inside(n2.getX(),n2.getY())) {
 					newNodes.add(n2);
 				}
@@ -163,6 +200,72 @@ public class Graph {
 		return new Graph(newNodes,newEdges);
 	}
 	
+	
+	public List<Graph> compare (Graph other,int creation, int segment, int treshold){
+		
+		List<Graph>subgraph1 = this.subgraphs(creation, treshold);
+		List<Graph>subgraph2 = other.subgraphs(creation, treshold);
+		List<Graph> result = new ArrayList<Graph>();;
+		System.out.println("sottografi impronta 1: "+subgraph1.size());
+		System.out.println("sottografi impronta 2: "+subgraph2.size());
+		int counter = 0;
+		 List<Graph> max;
+		 List<Graph> min;
+		if (subgraph1.size()>subgraph2.size()) {
+			 max = subgraph1;
+			 min = subgraph2;
+		}
+		else {
+			max = subgraph2;
+			min = subgraph1;
+		}
+		for(int i=0; i<max.size(); i++) {
+			Node center1 = max.get(i).getCentered();
+			Range range = new Range(center1.coordinates[0]-segment,center1.coordinates[0]+segment,
+									center1.coordinates[1]-segment,center1.coordinates[1]+segment);
+			
+			for(int j=0; j<min.size(); j++) {			
+				Node center2 = min.get(j).getCentered();
+				if(range.inside(center2.coordinates[0], center2.coordinates[1])) {
+					if(max.get(i).graphCompare(min.get(j)) == true) {
+						counter++;
+						result.add(max.get(i));
+					}
+				}
+			}
+		}
+		System.out.println("computed "+counter+" times.");
+		
+		return result;
+	}
+	private boolean graphCompare(Graph other) {
+		if(nodes.size() != other.nodes.size()) {
+			return false;
+		}
+		Tree romeo = DFS();
+		Tree luna = other.DFS();		
+		return romeo.isomorph(luna);
+	}
+	
+	private Node getCentered() {
+		Map<Node,Float> map = new HashMap<>();
+		for(Node n:nodes) {
+			float sum = 0;
+			for(Node n2:nodes) {
+				//distanza euclidea
+				sum+=Math.sqrt(Math.pow(n.coordinates[0]-n2.coordinates[0], 2)+Math.pow(n.coordinates[1]-n2.coordinates[1], 2));
+			}
+			map.put(n, sum);
+		}
+		Node result = map.keySet().iterator().next();
+		for(Node n:map.keySet()) {
+			if(map.get(n)<map.get(result)) {
+				result = n;
+			}
+		}
+		return result;
+	}
+	
 	public boolean isDisjoint(Graph other) {
 		for(Node n:nodes) {
 			if(other.nodes.contains(n)) {
@@ -170,6 +273,32 @@ public class Graph {
 			}
 		}
 		return true;
+	}
+	
+	private Tree DFS() {
+		Map<Integer,Integer> map = new HashMap<>();
+		for(Node n:nodes) {
+			//inizialize DFS kolors
+			map.put(n.index, 0);
+		}
+		Node center = getCentered();
+		TreeNode root = new TreeNode(center.coordinates,center.type);
+		DFSVisit(root,center,map);	
+		return new Tree(root);
+	}
+	
+	private void DFSVisit(TreeNode treeNode, Node graphNode, Map<Integer,Integer> colorMap) {
+		
+		 colorMap.put(graphNode.index, 1);
+		 for(Edge e:edges) {
+			 if(!(e.nodes[0] == graphNode && colorMap.get(e.nodes[1].index) == 0)) {
+				 continue;
+			 }
+			 TreeNode tmp =  new TreeNode(e.nodes[1].coordinates,e.nodes[1].type);
+			 treeNode.addChild(tmp);
+			 DFSVisit(tmp, e.nodes[1], colorMap); 
+		 }
+		 colorMap.put(graphNode.index, 2);
 	}
 	
 	public static class Node{
@@ -186,6 +315,7 @@ public class Graph {
 		public String toString() {
 			return "x: "+coordinates[0]+" y: "+coordinates[1]+" ,type: "+type;
 		}
+		
 		public String getID() {
 			return "X"+coordinates[0]+"Y"+coordinates[1];
 		}
