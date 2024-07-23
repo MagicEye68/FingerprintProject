@@ -4,9 +4,13 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import json.JSON;
 import json.JSONArray;
@@ -63,6 +67,11 @@ public class Graph {
 		}	
 	}
 	
+	private boolean accepted(Node n) {
+		return n.type.equals("bifurcation") || n.type.equals("ending");
+		
+	}
+	
 	public void printGraph(PrintStream ps, boolean isSubgraph) {
 
 		ps.println("digraph{");
@@ -88,7 +97,7 @@ public class Graph {
 	
 	public void printMultipleGraphs(PrintStream ps, List<Graph> subgraphs) {
 		ps.println("digraph{");
-		rawPrint(ps, false);
+		//rawPrint(ps, false);
 		for(Graph g:subgraphs) {
 			g.rawPrint(ps,true);
 		}
@@ -128,7 +137,132 @@ public class Graph {
 		
 	}
 
-	
+	public static void printComputedGraphs(PrintStream ps, Graph g1, Graph g2, Graph computed1, Graph computed2, int segment, String graphname1,  String graphname2 ) {
+		ps.println("digraph{");
+		ps.println("subgraph cluster_"+graphname1+"{");
+		ps.println("label=\"" + graphname1 + "\";");
+		ps.println("fontsize=1000;"); 
+		List<Node> nodi=g1.nodes.stream().filter((n) -> !computed1.nodes.contains(n)).toList();
+		
+		for(Node n:nodi) {
+			
+			ps.println(n.getID()+"_0"+" [label=\""+ n.index +"\", pos=\""+n.getX()+","+n.getY()+"!\", color=\"lightgray\"]");
+		}
+		List<Edge> archi=g1.edges.stream().filter((n) -> !computed1.edges.contains(n)).toList();
+		for(Edge e:archi) {
+			String color=getColorFromType(e.type);
+			Node from = e.nodes[0];
+			Node to = e.nodes[1];
+			ps.println(from.getID()+"_0"+" -> "+to.getID()+"_0"+" [color=\"lightgray\", dir=none]");
+		}
+
+		for(Node n:computed1.nodes) {	
+			String color=getColorFromType(n.type);
+			ps.println(n.getID()+"_0"+" [label=\""+ n.index +"\", pos=\""+n.getX()+","+n.getY()+"!\", color=\""+color+"\"]");
+		}
+
+		for(Edge e:computed1.edges) {
+			String color=getColorFromType(e.type);
+			Node from = e.nodes[0];
+			Node to = e.nodes[1];
+			ps.println(from.getID()+"_0"+" -> "+to.getID()+"_0"+" [color=\""+color+"\", dir=none]");
+		}
+		Node center = computed1.getCentered();
+		printbox(0,center.getX(),center.getY(),segment,ps,"darkmagenta",0);
+		ps.println("}");
+		ps.println("subgraph cluster_"+graphname2+"{");
+		ps.println("label=\"" + graphname2 + "\";");
+		ps.println("fontsize=1000;"); 
+		nodi=g2.nodes.stream().filter((n) -> !computed2.nodes.contains(n)).toList();
+		for(Node n:nodi) {			
+			ps.println(n.getID()+"_1"+" [label=\""+ n.index +"\", pos=\""+(n.getX()+600)+","+n.getY()+"!\", color=\"gray\"]");
+		}
+	    archi=g2.edges.stream().filter((n) -> !computed2.edges.contains(n)).toList();
+		for(Edge e:archi) {
+			Node from = e.nodes[0];
+			Node to = e.nodes[1];
+			ps.println(from.getID()+"_1"+" -> "+to.getID()+"_1"+" [color=\"gray\", dir=none]");
+		}
+
+		for(Node n:computed2.nodes) {
+			String color=getColorFromType(n.type);
+			ps.println(n.getID()+"_1"+" [label=\""+ n.index +"\", pos=\""+(n.getX()+600)+","+n.getY()+"!\", color=\""+color+"\"]");
+		}
+
+		for(Edge e:computed2.edges) {
+			String color=getColorFromType(e.type);
+			Node from = e.nodes[0];
+			Node to = e.nodes[1];
+			ps.println(from.getID()+"_1"+" -> "+to.getID()+"_1"+" [color=\""+color+"\", dir=none]");
+		}
+		printbox(1,(center.getX()+600),center.getY(),segment,ps,"darkmagenta",1);
+		ps.println("}");
+//		ps.println("subgraph cluster_overlap{");
+//		ps.println("label=\"overlap\";");
+//		ps.println("fontsize=1000;"); 
+//		nodi=g1.nodes.stream().filter((n) -> !computed1.nodes.contains(n)).toList();
+//		for(Node n:nodi) {			
+//			ps.println(n.getID()+"_2"+" [label=\""+ n.index +"\", pos=\""+(n.getX()+1000)+","+n.getY()+"!\", color=\"lightgray\"]");
+//		}
+//		archi=g1.edges.stream().filter((n) -> !computed1.edges.contains(n)).toList();
+//		for(Edge e:archi) {
+//			Node from = e.nodes[0];
+//			Node to = e.nodes[1];
+//			ps.println(from.getID()+"_2"+" -> "+to.getID()+"_2"+" [color=\"lightgray\", dir=none]");
+//		}
+//
+//		for(Node n:computed1.nodes) {	
+//			String color=getColorFromType(n.type);
+//			ps.println(n.getID()+"_2"+" [label=\""+ n.index +"\", pos=\""+(n.getX()+1000)+","+n.getY()+"!\", color=\""+color+"\"]");
+//		}
+//
+//		for(Edge e:computed1.edges) {
+//			String color=getColorFromType(e.type);
+//			Node from = e.nodes[0];
+//			Node to = e.nodes[1];
+//			ps.println(from.getID()+"_2"+" -> "+to.getID()+"_2"+" [color=\""+color+"\", dir=none]");
+//		}
+//		center = computed1.getCentered();
+//		printbox(2,(center.getX()+1000),center.getY(),segment,ps,"darkmagenta",2);
+//		nodi=g2.nodes.stream().filter((n) -> !computed2.nodes.contains(n)).toList();
+//		for(Node n:nodi) {			
+//			ps.println(n.getID()+"_3"+" [label=\""+ n.index +"\", pos=\""+(n.getX()+1000)+","+n.getY()+"!\", color=\"gray\"]");
+//		}
+//	    archi=g2.edges.stream().filter((n) -> !computed2.edges.contains(n)).toList();
+//		for(Edge e:archi) {
+//			Node from = e.nodes[0];
+//			Node to = e.nodes[1];
+//			ps.println(from.getID()+"_3"+" -> "+to.getID()+"_3"+" [color=\"gray\", dir=none]");
+//		}
+//
+//		for(Node n:computed2.nodes) {	
+//			String color=getColorFromType(n.type);
+//			ps.println(n.getID()+"_3"+" [label=\""+ n.index +"\", pos=\""+(n.getX()+1000)+","+n.getY()+"!\", color=\""+color+"\"]");
+//		}
+//
+//		for(Edge e:computed2.edges) {
+//			String color=getColorFromType(e.type);
+//			Node from = e.nodes[0];
+//			Node to = e.nodes[1];
+//			ps.println(from.getID()+"_3"+" -> "+to.getID()+"_3"+" [color=\""+color+"\", dir=none]");
+//		}
+//		ps.println("}");
+		ps.println("}");
+	}
+	private static void printbox(int i,int x, int y, int segment, PrintStream ps, String color,int gi) {
+		int tx = x+segment<(500*(gi+1))?x+segment:500*(gi+1);
+		int bx = x-segment>(500*gi)?x-segment:500*gi;
+		int ty = y+segment<(500)?y+segment:500;
+		int by = y-segment>(0)?y-segment:0;
+		ps.println("TL"+i+" [pos=\""+tx+", "+by+"!\" shape=point, color=\""+color+"\"];");
+		ps.println("TR"+i+" [pos=\""+tx+", "+ty+"!\" shape=point, color=\""+color+"\"];");
+		ps.println("BL"+i+" [pos=\""+bx+", "+by+"!\" shape=point, color=\""+color+"\"];");
+		ps.println("BR"+i+" [pos=\""+bx+", "+ty+"!\" shape=point, color=\""+color+"\"];");
+		ps.println("TL"+i+" -> TR"+i+" [dir=none, color=\""+color+"\"];");
+		ps.println("TR"+i+" -> BR"+i+" [dir=none, color=\""+color+"\"];");
+		ps.println("BR"+i+" -> BL"+i+" [dir=none, color=\""+color+"\"];");
+		ps.println("BL"+i+" -> TL"+i+" [dir=none, color=\""+color+"\"];");
+	}
 	
 	public List<Graph> subgraphs(int segment, int size) {
 
@@ -154,7 +288,14 @@ public class Graph {
 					newEdges.add(e);
 				}
 			}
+			Set<Node> nodiCollegati = new HashSet<>();
 			
+				for(Edge e1:newEdges) {
+					nodiCollegati.add(e1.nodes[0]);
+					nodiCollegati.add(e1.nodes[1]);
+				}
+			
+			newNodes=nodiCollegati.stream().toList();
 			subgraphs.add(new Graph(newNodes, newEdges));
 			
 			
@@ -183,6 +324,78 @@ public class Graph {
 		return subgraphs;
 	}
 	
+    public List<Graph> subgraphs2(int segment, int min, int max) {
+        List<Graph> result = new ArrayList<>();
+        Set<Node> added = new HashSet<>();
+        
+        for (Node n : nodes) {
+            if (added.contains(n) || !accepted(n)) continue;
+                
+            List<Node> newNodes = new ArrayList<>();
+            List<Edge> newEdges = new ArrayList<>();
+            
+            // Add starting node
+            newNodes.add(n);
+            //Track
+            added.add(n);
+            
+            Range r = new Range(n.getX()-segment, n.getX()+segment, n.getY()-segment, n.getY()+segment);
+            addRec(n, r, newNodes, newEdges, added, min, max);
+            
+            if (newNodes.size()< min){
+                newNodes.forEach((nn) -> added.remove(nn));
+            } else {
+            	
+                
+                result.add(new Graph(newNodes, newEdges));
+            }
+            
+           
+        }
+        
+         
+        return result;
+    }
+	
+	private List<Node> neibors(Node n){
+        List<Node> result = new ArrayList<>();
+        
+        edges.stream().filter((e) -> e.nodes[0] == n).forEach((e) -> result.add(e.nodes[1]));
+        
+        return result;
+    }
+	
+    private Edge getEdgeFor(Node from, Node to) {
+        for (Edge e : edges) {
+            if (e.nodes[0] == from && e.nodes[1] == to) {
+                return e;
+            }
+        }
+        
+        throw new RuntimeException("Edge not found");
+    }
+    
+    private void addRec(Node n, Range r, List<Node> newnodes, List<Edge> newedges, Set<Node> added, int min, int max) {
+        List<Node> neibors = neibors(n).stream().filter(e -> !added.contains(e)).filter(e ->accepted(e)).toList();
+        for (Node n2 : neibors) {
+            if (newnodes.size() == max)
+                return;
+            if (r.inside(n2.getX(), n2.getY()) && !added.contains(n2)) { 
+            	try{
+            		if(newedges.contains(getEdgeFor(n2,n)) || newedges.contains(getEdgeFor(n,n2)))System.out.println("wanr9ng");
+            	}
+            	catch(Exception ignored){};
+            	
+            	newedges.add(getEdgeFor(n, n2));
+                newnodes.add(n2);
+                added.add(n2);
+
+                addRec(n2, r, newnodes, newedges, added, min, max);
+                neibors = neibors(n).stream().filter(e -> !added.contains(e)).filter(e ->accepted(e)).toList();
+
+            }
+        }
+    }
 	public Graph merge(Graph other) {
 		List<Node> newNodes = new ArrayList<>(nodes);
 		List<Edge> newEdges = new ArrayList<>(edges);
@@ -200,52 +413,46 @@ public class Graph {
 		return new Graph(newNodes,newEdges);
 	}
 	
+	private boolean realInside(Range range) {
+		for(Node n:nodes) {
+			if(!(range.inside(n.getX(), n.getY()))) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	
 	public List<Graph> compare (Graph other,int creation, int segment, int treshold){
 		
-		List<Graph>subgraph1 = this.subgraphs(creation, treshold);
-		List<Graph>subgraph2 = other.subgraphs(creation, treshold);
-		List<Graph> result = new ArrayList<Graph>();;
-		System.out.println("sottografi impronta 1: "+subgraph1.size());
-		System.out.println("sottografi impronta 2: "+subgraph2.size());
-		int counter = 0;
-		 List<Graph> max;
-		 List<Graph> min;
-		if (subgraph1.size()>subgraph2.size()) {
-			 max = subgraph1;
-			 min = subgraph2;
-		}
-		else {
-			max = subgraph2;
-			min = subgraph1;
-		}
-		for(int i=0; i<max.size(); i++) {
-			Node center1 = max.get(i).getCentered();
+		List<Graph>subgraph1 = this.subgraphs2(creation, treshold, treshold);
+		List<Graph>subgraph2 = other.subgraphs2(creation, treshold, treshold);
+		List<Graph> result = new ArrayList<Graph>();
+		//System.out.println("sottografi impronta 1: "+subgraph1.size());
+		//System.out.println("sottografi impronta 2: "+subgraph2.size());
+		//int counter = 0;
+
+		for(int i=0; i<subgraph1.size(); i++) {
+			Node center1 = subgraph1.get(i).getCentered();
 			Range range = new Range(center1.coordinates[0]-segment,center1.coordinates[0]+segment,
 									center1.coordinates[1]-segment,center1.coordinates[1]+segment);
 			
-			for(int j=0; j<min.size(); j++) {			
-				Node center2 = min.get(j).getCentered();
-				if(range.inside(center2.coordinates[0], center2.coordinates[1])) {
-					if(max.get(i).graphCompare(min.get(j)) == true) {
-						counter++;
-						result.add(max.get(i));
+			for(int j=0; j<subgraph2.size(); j++) {			
+				if(subgraph1.get(i).realInside(range) && subgraph2.get(j).realInside(range)) {
+					if(subgraph1.get(i).graphCompare(subgraph2.get(j)) == true) {
+						//counter++;				
+						result.add(subgraph1.get(i));
+						result.add(subgraph2.get(j));
 					}
 				}
 			}
 		}
-		System.out.println("computed "+counter+" times.");
+		//System.out.println("computed "+counter+" times.");
 		
 		return result;
 	}
-	private boolean graphCompare(Graph other) {
-		if(nodes.size() != other.nodes.size()) {
-			return false;
-		}
-		Tree romeo = DFS();
-		Tree luna = other.DFS();		
-		return romeo.isomorph(luna);
-	}
+
 	
 	private Node getCentered() {
 		Map<Node,Float> map = new HashMap<>();
@@ -300,7 +507,39 @@ public class Graph {
 		 }
 		 colorMap.put(graphNode.index, 2);
 	}
-	
+	private boolean graphCompare(Graph other) {
+		int thisEnding = 0;
+		int thisBifurcation = 0;
+		int otherEnding = 0;
+		int otherBifurcation = 0;
+		for(Node n:nodes) {
+		if(n.type.equals("bifurcation")) {
+			thisBifurcation++;
+		}
+		else if(n.type.equals("ending")) {
+			thisEnding++;
+		}
+		}
+		
+		for(Node n:other.nodes) {
+		if(n.type.equals("bifurcation")) {
+			otherBifurcation++;
+		}
+		else if(n.type.equals("ending")) {
+			otherEnding++;
+		}
+		}
+		if(thisEnding != otherEnding || thisBifurcation != otherBifurcation) {
+			return false;
+		}
+		
+		if(nodes.size() != other.nodes.size()) {
+			return false;
+		}
+		Tree romeo = DFS();
+		Tree luna = other.DFS();		
+		return romeo.isomorph(luna);
+	}
 	public static class Node{
 		public int[] coordinates;
 		public String type;
@@ -313,7 +552,7 @@ public class Graph {
 		}
 		@Override
 		public String toString() {
-			return "x: "+coordinates[0]+" y: "+coordinates[1]+" ,type: "+type;
+			return "x: "+coordinates[0]+" y: "+coordinates[1]+" ,type: "+type+" ,index: "+index;
 		}
 		
 		public String getID() {
@@ -324,6 +563,12 @@ public class Graph {
 		}
 		public int getY() {
 			return coordinates[1];
+		}
+		@Override
+		public boolean equals(Object other) {
+			if(!(other instanceof Node)) return false;
+			Node n = (Node)other;
+			return n.index == index;
 		}
 	}
 	
@@ -337,6 +582,12 @@ public class Graph {
 			this.type = type;
 			this.distance = distance;		
 		}	
+		public Node getFrom() {
+			return nodes[0];
+		}
+		public Node getTo() {
+			return nodes[1];
+		}
 	}
 	
 	public static class Range{
@@ -354,6 +605,39 @@ public class Graph {
 		
 		public boolean inside(int x, int y) {
 			return x>= minX && x <= maxX && y>=minY && y<=maxY;
+		}
+		
+	}
+	
+	public class NodesIterator implements Iterator<Node>{
+		private int current;
+		public NodesIterator() {
+			current = 0;
+		}
+		@Override
+		public boolean hasNext() {
+			return current != nodes.size();
+		}
+
+		@Override
+		public Node next() {			
+			return nodes.get(current++);
+		}	
+	}
+	
+	public class EdgesIterator implements Iterator<Edge>{
+		private int current;
+		public EdgesIterator() {
+			current = 0;
+		}
+		@Override
+		public boolean hasNext() {
+			return current != edges.size();
+		}
+
+		@Override
+		public Edge next() {			
+			return edges.get(current++);
 		}
 		
 	}

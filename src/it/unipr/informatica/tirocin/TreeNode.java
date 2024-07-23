@@ -14,6 +14,7 @@ public class TreeNode{
 		children = new ArrayList<>();
 	}
 	
+	
 	public void addChild(TreeNode child) {
 		children.add(children.size(),child);
 	}
