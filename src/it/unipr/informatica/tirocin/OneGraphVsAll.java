@@ -8,6 +8,8 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import it.unipr.informatica.tirocin.print.Color;
+import it.unipr.informatica.tirocin.print.DotFileGraph;
 import json.ValueNotFoundException;
 
 public class OneGraphVsAll {
@@ -19,7 +21,7 @@ public class OneGraphVsAll {
 		
 		String nomeHardcoded= "01_Ay_08_00";
 		Graph graphHardcoded = new Graph("gruppo1"+File.separator+nomeHardcoded+File.separator+"nodes_graph.json",
-				"gruppo1"+File.separator+nomeHardcoded+File.separator+"edges_graph.json");
+				"gruppo1"+File.separator+nomeHardcoded+File.separator+"edges_graph.json",nomeHardcoded);
 		list.add(graphHardcoded);
 		fnames.add(nomeHardcoded);
 		
@@ -27,7 +29,7 @@ public class OneGraphVsAll {
 			if(f.getName().equals(".DS_Store")) continue;
 			if(fnames.get(0).equals(f.getName())) continue;
 			list.add(new Graph("gruppo1"+File.separator+f.getName()+File.separator+"nodes_graph.json",
-								"gruppo1"+File.separator+f.getName()+File.separator+"edges_graph.json"));
+								"gruppo1"+File.separator+f.getName()+File.separator+"edges_graph.json",f.getName()));
 			fnames.add(f.getName());
 		}
 
@@ -45,10 +47,16 @@ public class OneGraphVsAll {
 				stringmax=fnames.get(0)+"-"+fnames.get(i)+".dot";
 			}
 			for(int j = 0 ; j <result.size(); j+=2) {
-				try (FileOutputStream fos1 = new FileOutputStream("compared_outs"+ File.separator + fnames.get(0)+"-"+fnames.get(i)+"-"+j/2+".dot");
-							PrintStream ps1 = new PrintStream(fos1);) {
-					 	Graph.printComputedGraphs(ps1, list.get(0), list.get(i), result.get(j), result.get(j+1), boxCompare, fnames.get(0), fnames.get(i));	  
-					}
+				new DotFileGraph("compared_outs"+ File.separator + fnames.get(i)+"-"+fnames.get(j)+"-"+j/2)
+			 	.printGraph(list.get(0),0,Color.LIGHTGRAY, true)
+				.printGraph(result.get(j),0,null, false)
+				.printBox(result.get(j).getCentered().getX(), result.get(j).getCentered().getY(), boxCompare, 0, Color.GREEN)
+				.printGraph(list.get(i),1,Color.LIGHTGRAY, true)
+				.printGraph(result.get(j+1),1,null, false)
+				.printBox(result.get(j).getCentered().getX(), result.get(j).getCentered().getY(), boxCompare, 1, Color.GREEN)
+				.addLabel(fnames.get(0), 0)
+				.addLabel(fnames.get(i), 1)
+				.saveFile();
 			}
 
 		}  

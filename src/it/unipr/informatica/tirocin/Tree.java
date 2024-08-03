@@ -5,6 +5,9 @@ public class Tree {
 	public Tree(TreeNode root) {
 		this.root = root;
 	}
+	public TreeNode getRoot() {
+		return this.root;
+	}
 	
 	public boolean isomorph(Tree other) {
 		if(root.children.size() != other.root.children.size()) {

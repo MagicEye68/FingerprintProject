@@ -6,12 +6,17 @@ import java.util.List;
 public class TreeNode{
 	private int[] coordinates;
 	public String type;
+	int index;
 	public List<TreeNode> children;
 	
-	public TreeNode(int [] coordinates, String type) {
+	public TreeNode(int [] coordinates, String type, int index) {
 		this.coordinates = coordinates;
 		this.type=type;
+		this.index=index;
 		children = new ArrayList<>();
+	}
+	public int getIndex() {
+		return this.index;
 	}
 	
 	
