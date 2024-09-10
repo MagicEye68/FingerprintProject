@@ -1,2 +1,0 @@
-Media tempo di un impronta con un altra impronta: 786 ms.
-Tempo totale: 779093 ms.

@@ -7,9 +7,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import it.unipr.informatica.tirocin.Graph;
+import it.unipr.informatica.tirocin.Graph.Box;
 import it.unipr.informatica.tirocin.Graph.Edge;
 import it.unipr.informatica.tirocin.Graph.Node;
-import it.unipr.informatica.tirocin.Tree;
+
 
 public class DotFileGraph {
 	
@@ -19,6 +20,7 @@ public class DotFileGraph {
 	private List<List<InnerNode>> nodes;
 	private List<List<InnerEdge>> edges;
 	private List<InnerBox> boxes;
+	private List<InnerRett> rettangoli;
 	private List <String> labels;
 	private List<Integer> offset;
 	
@@ -27,6 +29,7 @@ public class DotFileGraph {
 		nodes = new ArrayList<>();
 		edges = new ArrayList<>();
 		boxes = new ArrayList<>();
+		rettangoli = new ArrayList<>();
 		labels = new ArrayList<>();
 		this.filename=filename;
 		offset = new ArrayList<>();
@@ -86,7 +89,7 @@ public class DotFileGraph {
 			int x = n.getX();
 			int y = n.getY();
 			if (printAll) {
-				// check if nodes already exist
+				
 				int pos = containsNodeAtXY(x,y,index);
 				if (pos == -1) {
 					//nodo nuovo
@@ -96,7 +99,7 @@ public class DotFileGraph {
 					_nodes.get(pos).color = color2;
 				}
 			} else {
-				// insert without checking existence
+				
 				_nodes.add(new InnerNode(x,y,color2));
 			}
 			
@@ -139,7 +142,7 @@ public class DotFileGraph {
 			case "added": return Color.RED;	
 			case "ending": return Color.GREEN;
 			case "ridge": return Color.BLUE;
-			default: return Color.LIGHTGRAY;
+			default: return Color.BLACK;
 		}	
 	}
 	
@@ -150,12 +153,13 @@ public class DotFileGraph {
 			case RED: return "red";	
 			case GREEN: return "green";
 			case LIGHTGRAY: return "lightgray";
+			case GRAY: return "gray";
 			case BLACK:return "black";
 			
 		default:
 			break;
 		}
-		return "lightgray";	
+		return "black";	
 	}
 	
 	
@@ -184,6 +188,37 @@ public class DotFileGraph {
 			int currentOffset = offset.get(index);
 			currentOffset += centerX +segment - currentOffset;
 			offset.set(index,currentOffset);
+		}
+
+		return this;
+	}
+	
+	public DotFileGraph printRettangolo(double bassoX, double bassoY, double larghezza,double altezza, int index, Color color) {
+		
+		rettangoli.add(new InnerRett(bassoX, bassoY, larghezza,altezza, index, color));
+
+		return this;
+	}
+	
+	public DotFileGraph printGrid(List<Box> boxes,int index, Color color) {
+		for(Box b:boxes) {
+			double larghezza = b.getRange().getMaxX()-b.getRange().getMinX();
+			double altezza = b.getRange().getMaxY()-b.getRange().getMinY();
+			double bassox= b.getRange().getMinX();
+			double bassoy = b.getRange().getMinY();
+			this.printRettangolo(bassox,bassoy, larghezza, altezza,index,Color.WHITE);
+
+			}
+		for(Box b:boxes) {
+			double larghezza = b.getRange().getMaxX()-b.getRange().getMinX();
+			double altezza = b.getRange().getMaxY()-b.getRange().getMinY();
+			double bassox= b.getRange().getMinX();
+			double bassoy = b.getRange().getMinY();
+			if(!b.isEmpty()) {
+				this.printRettangolo(bassox,bassoy, larghezza, altezza,index,color);
+			}
+			
+			
 		}
 
 		return this;
@@ -277,12 +312,45 @@ public class DotFileGraph {
 				
 				j += 4;
 			}
+			// print rettangoli
+			 j = 0;
+			for (int i = 0; i != rettangoli.size(); ++i) {
+				InnerRett rettangolo = rettangoli.get(i);
+				int shift = offset.get(rettangolo.index) + (PADDING * rettangolo.index);
+				String colorStr = stringFromColor(rettangolo.color);
+				// nodes
+				// bottom left
+				ps.printf("rect%d [pos = \"%d,%d!\", shape = point, color = \"%s\"]\n",
+						j, (int)rettangolo.x + shift, (int)rettangolo.y, colorStr);
+				// bottom right
+				ps.printf("rect%d [pos = \"%d,%d!\", shape = point, color = \"%s\"]\n",
+						j + 1, (int)rettangolo.x + (int)rettangolo.larghezza + shift, (int)rettangolo.y, colorStr);
+				// top left
+				ps.printf("rect%d [pos = \"%d,%d!\", shape = point, color = \"%s\"]\n",
+						j + 2, (int)rettangolo.x + shift, (int)rettangolo.y + (int)rettangolo.altezza, colorStr);
+				// top right
+				ps.printf("rect%d [pos = \"%d,%d!\", shape = point, color = \"%s\"]\n",
+						j + 3, (int)rettangolo.x + (int)rettangolo.larghezza + shift, (int)rettangolo.y + (int)rettangolo.altezza, colorStr);
+				// edges
+				// bottom edge
+				ps.printf("rect%d -> rect%d [dir=none color=\"%s\"]\n", j, j + 1, colorStr);
+				// left edge
+				ps.printf("rect%d -> rect%d [dir=none color=\"%s\"]\n", j, j + 2, colorStr);
+				// right edge
+				ps.printf("rect%d -> rect%d [dir=none color=\"%s\"]\n", j + 3, j + 1, colorStr);
+				// top edge
+				ps.printf("rect%d -> rect%d [dir=none color=\"%s\"]\n", j + 3, j + 2, colorStr);
+				
+				j += 4;
+			}
 			ps.println("}");
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(e.getCause());
 		}
 		
 		boxes = null;
+		rettangoli = null;
 		nodes = null;
 		edges = null;
 	}
@@ -326,6 +394,22 @@ public class DotFileGraph {
 			x = centerX - _len;
 			y = centerY - _len;
 			len = _len * 2;
+			this.index = index;
+			this.color = color;
+		}
+	}
+	
+	private static class InnerRett {
+		private double x, y;
+		private double altezza,larghezza;
+		private int index;
+		private Color color;
+		
+		public InnerRett(double bassox, double bassoy, double larghezza,double altezza, int index, Color color) {
+			this.x = bassox;
+			this.y = bassoy;
+			this.larghezza=larghezza;
+			this.altezza=altezza;
 			this.index = index;
 			this.color = color;
 		}

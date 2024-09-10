@@ -1,0 +1,30 @@
+digraph{
+subgraph cluster_0 {
+color = white
+label = "18_Ax_02_00";
+fontsize=10;
+T0_184 [label="184", color="blue"]
+T0_184 -> T0_212 [color="black"]
+T0_212 [label="212", color="green"]
+T0_184 -> T0_196 [color="black"]
+T0_196 [label="196", color="green"]
+T0_184 -> T0_178 [color="black"]
+T0_178 [label="178", color="blue"]
+T0_178 -> T0_185 [color="black"]
+T0_185 [label="185", color="green"]
+}
+subgraph cluster_1 {
+color = white
+label = "06_C0_02_00";
+fontsize=10;
+T1_774 [label="774", color="blue"]
+T1_774 -> T1_738 [color="black"]
+T1_738 [label="738", color="blue"]
+T1_738 -> T1_731 [color="black"]
+T1_731 [label="731", color="green"]
+T1_774 -> T1_792 [color="black"]
+T1_792 [label="792", color="green"]
+T1_774 -> T1_766 [color="black"]
+T1_766 [label="766", color="green"]
+}
+}

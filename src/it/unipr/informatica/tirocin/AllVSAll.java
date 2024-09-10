@@ -18,23 +18,23 @@ import json.ValueNotFoundException;
 public class AllVSAll {
 	public static void main(String[] args) throws ValueNotFoundException, FileNotFoundException, IOException  {
 
-		File dir=new File("gruppo1");
+		File dir=new File("gemelliGruppo1");
 		List<Graph> list = new ArrayList<Graph>();
 		List<String> fnames = new ArrayList<String>();
 		Map<Graph, Boolean> checker = new HashMap<>();
 		
 		for(File f:dir.listFiles()) {
 			if(f.getName().equals(".DS_Store")) continue;
-			list.add(new Graph("gruppo1"+File.separator+f.getName()+File.separator+"nodes_graph.json",
-								"gruppo1"+File.separator+f.getName()+File.separator+"edges_graph.json",f.getName()));
+			list.add(new Graph("gemelliGruppo1"+File.separator+f.getName()+File.separator+"nodes_graph.json",
+								"gemelliGruppo1"+File.separator+f.getName()+File.separator+"edges_graph.json",f.getName()));
 			fnames.add(f.getName());
 		}
 		for (Graph g : list) {
 			checker.put(g, false);
 		}
 		int treshold = 8;
-		int boxCreate = 8;
-		int boxCompare = 16;
+		int boxCreate = 25;
+		int boxCompare = 25;
 		int counter = 0;
 		long time1 = 0;
 		long tempo1 = System.currentTimeMillis();

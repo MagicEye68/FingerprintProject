@@ -1,6 +1,7 @@
 package it.unipr.informatica.tirocin;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TreeNode{
@@ -29,4 +30,40 @@ public class TreeNode{
 	public String toString() {
 		return "x: "+coordinates[0]+" y: "+coordinates[1]+" ,type: "+type;
 	}	
+	
+	
+    public String stringHashStrict() {
+        StringBuilder string = new StringBuilder();
+        string.append('(').append(type.charAt(0));
+        List<String> childrenStringHash = new ArrayList<>();
+        for(TreeNode n : children) {
+            childrenStringHash.add(n.stringHashStrict());
+        }
+        Collections.sort(childrenStringHash);
+        for (String hash : childrenStringHash) {
+            string.append(hash);
+        }
+        string.append(")");
+        
+        return string.toString();
+    }
+    
+
+    public String stringHash() {
+        StringBuilder string = new StringBuilder();
+        string.append('(');
+        List<String> childrenStringHash = new ArrayList<>();
+        for(TreeNode n : children) {
+            childrenStringHash.add(n.stringHash());
+        }
+        Collections.sort(childrenStringHash);
+        for (String hash : childrenStringHash) {
+            string.append(hash);
+        }
+        string.append(")");
+        
+        return string.toString();
+    }
+    
+    
 }

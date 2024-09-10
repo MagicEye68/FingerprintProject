@@ -9,7 +9,7 @@ public class Tree {
 		return this.root;
 	}
 	
-	public boolean isomorph(Tree other) {
+	public boolean isomorphvecchio(Tree other) {
 		if(root.children.size() != other.root.children.size()) {
 			return false;
 		}
@@ -25,6 +25,8 @@ public class Tree {
 		}
 		return true;
 	}
+	public boolean isomorph(Tree other) {
+	    return root.stringHashStrict().equals(other.root.stringHashStrict());
+	}
 	
-
 }

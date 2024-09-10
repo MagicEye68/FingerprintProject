@@ -17,7 +17,7 @@ public class PlainParsed {
 		for(File f:dir.listFiles()) {
 			if(f.getName().equals(".DS_Store")) continue;
 			list.add(new Graph("gruppo1"+File.separator+f.getName()+File.separator+"nodes_graph.json",
-								"gruppo1"+File.separator+f.getName()+File.separator+"edges_graph.json",f.getName()));
+								"gruppo1"+File.separator+f.getName()+File.separator+"edges_graph.json",f.getName()).removeAdded());
 			fnames.add(f.getName());
 		}		
 		for (int i = 0; i < list.size(); i++) {		    

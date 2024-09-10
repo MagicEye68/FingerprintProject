@@ -1,0 +1,22 @@
+digraph{
+subgraph cluster_0 {
+color = white
+label = "02_Ax_05_01";
+fontsize=10;
+T0_1371 [label="1371", color="blue"]
+T0_1371 -> T0_1367 [color="black"]
+T0_1367 [label="1367", color="blue"]
+T0_1367 -> T0_1380 [color="black"]
+T0_1380 [label="1380", color="green"]
+}
+subgraph cluster_1 {
+color = white
+label = "06_C0_05_00";
+fontsize=10;
+T1_1923 [label="1923", color="blue"]
+T1_1923 -> T1_1912 [color="black"]
+T1_1912 [label="1912", color="blue"]
+T1_1912 -> T1_1848 [color="black"]
+T1_1848 [label="1848", color="green"]
+}
+}
